@@ -1,6 +1,48 @@
-import { Plugin } from 'obsidian';
+import { App, Modal, Plugin } from 'obsidian';
+import { hasUncaughtExceptionCaptureCallback } from 'process';
 import { PomoSettingTab, PomoSettings, DEFAULT_SETTINGS } from './settings';
 import { getDailyNoteFile, Mode, Timer } from './timer';
+
+class NumberInputModal extends Modal {
+	timer: Timer;
+	hasEntered: boolean = false;
+	constructor(app: App, timer: Timer) {
+		super(app);
+		this.timer = timer;
+	}
+
+	onOpen() {
+		let { contentEl } = this;
+		contentEl.createEl('h2', { text: 'Set timer length' });
+
+		let input = contentEl.createEl('input');
+		input.type = 'number';
+		input.value = this.timer.settings.pomo.toString();
+		input.select();
+
+		let button = contentEl.createEl('button', { text: 'Set' });
+		button.onClickEvent(async () => {
+			this.timer.startCustomTimer(parseInt(input.value));
+			this.close();
+		});
+
+		input.addEventListener('keydown', (event: KeyboardEvent) => {
+			if (event.key === 'Enter') {
+				this.hasEntered = true;
+			}
+		});
+		input.addEventListener('keyup', (event: KeyboardEvent) => {
+			if (event.key === 'Enter' && this.hasEntered) {
+				button.click();
+			}
+		});
+	}
+
+	onClose(): void {
+		let { contentEl } = this;
+		contentEl.empty();
+	}
+}
 
 
 export default class PomoTimerPlugin extends Plugin {
@@ -45,6 +87,22 @@ export default class PomoTimerPlugin extends Plugin {
 				if (leaf) {
 					if (!checking) {
 						this.timer.startTimer(Mode.Pomo);
+					}
+					return true;
+				}
+				return false;
+			}
+		});
+
+		this.addCommand({
+			id: 'start-custom-pomo',
+			name: 'Start custom timer',
+			icon: 'play',
+			checkCallback: (checking: boolean) => {
+				let leaf = this.app.workspace.activeLeaf;
+				if (leaf) {
+					if (!checking) {
+						new NumberInputModal(this.app, this.timer).open();
 					}
 					return true;
 				}

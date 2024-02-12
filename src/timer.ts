@@ -20,6 +20,8 @@ export const enum Mode {
 export class Timer {
 	plugin: PomoTimerPlugin;
 	settings: PomoSettings;
+	customDuration: number;
+	hasCustomDuration: boolean;
 	startTime: moment.Moment; /*when currently running timer started*/
 	endTime: moment.Moment;   /*when currently running timer will end if not paused*/
 	mode: Mode;
@@ -77,6 +79,8 @@ export class Timer {
 	}
 
 	async handleTimerEnd() {
+		var shouldForceStop = false;
+
 		if (this.mode === Mode.Pomo) { //completed another pomo
 			this.pomosSinceStart += 1;
 
@@ -85,6 +89,7 @@ export class Timer {
 			}
 		} else if (this.mode === Mode.ShortBreak || this.mode === Mode.LongBreak) {
 			this.cyclesSinceLastAutoStop += 1;
+			shouldForceStop = this.settings.forceStopAtEndOfCycle;
 		}
 
 		//switch mode
@@ -95,16 +100,23 @@ export class Timer {
 			showSystemNotification(this.mode, this.settings.emoji);
 		}
 
-		if (this.settings.autostartTimer === false && this.settings.numAutoCycles <= this.cyclesSinceLastAutoStop) { //if autostart disabled, pause and allow user to start manually
-			this.setupTimer();
-			this.autoPaused = true;
-			this.paused = true;
-			this.pausedTime = this.getTotalModeMillisecs();
-			this.cyclesSinceLastAutoStop = 0;
+		if (shouldForceStop || (this.settings.autostartTimer === false && this.settings.numAutoCycles <= this.cyclesSinceLastAutoStop)) { //if autostart disabled, pause and allow user to start manually
+			this.stopTimer();
 		} else {
 			this.startTimer();
 		}
 	}
+
+	stopTimer() {
+		this.mode = Mode.NoTimer;
+		this.startTime = moment(0);
+		this.endTime = moment(0);
+		this.paused = false;
+		this.pomosSinceStart = 0;
+	}
+
+
+
 
 	async quitTimer(): Promise<void> {
 		this.mode = Mode.NoTimer;
@@ -168,6 +180,12 @@ export class Timer {
 		}
 	}
 
+	startCustomTimer(duration: number): void {
+		this.hasCustomDuration = true;
+		this.customDuration = duration;
+		this.startTimer(Mode.Pomo);
+	}
+
 	private setupTimer(mode: Mode = null) {
 		if (mode === null) { //no arg -> start next mode in cycle
 			if (this.mode === Mode.Pomo) {
@@ -200,6 +218,9 @@ export class Timer {
 	getTotalModeMillisecs(): number {
 		switch (this.mode) {
 			case Mode.Pomo: {
+				if (this.hasCustomDuration === true) {
+					return this.customDuration * MILLISECS_IN_MINUTE;
+				}
 				return this.settings.pomo * MILLISECS_IN_MINUTE;
 			}
 			case Mode.ShortBreak: {
@@ -267,6 +288,7 @@ export class Timer {
 	async logPomo(): Promise<void> {
 		var logText = moment().format(this.settings.logText);
 		const logFilePlaceholder = "{{logFile}}";
+		logText = logText + " Duration(" + millisecsToString(this.endTime.clone().diff(this.startTime.clone())) + ")";
 
 		if (this.settings.logActiveNote === true) {
 			let linkText = this.plugin.app.fileManager.generateMarkdownLink(this.activeNote, '');

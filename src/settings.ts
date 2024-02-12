@@ -23,6 +23,7 @@ export interface PomoSettings {
 	logActiveNote: boolean;
 	fancyStatusBar: boolean;
 	whiteNoise: boolean;
+	forceStopAtEndOfCycle: boolean;
 }
 
 export const DEFAULT_SETTINGS: PomoSettings = {
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS: PomoSettings = {
 	logActiveNote: false,
 	fancyStatusBar: false,
 	whiteNoise: false,
+	forceStopAtEndOfCycle: true,
 }
 
 
@@ -126,6 +128,18 @@ export class PomoSettingTab extends PluginSettingTab {
 						this.plugin.saveSettings();
 					}));
 		}
+
+		new Setting(containerEl)
+			.setName("Force stop at end of cycle")
+			.setDesc("Force stop the timer at the end of each cycle (pomodoro or break)")
+			.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.forceStopAtEndOfCycle)
+					.onChange(value => {
+						this.plugin.settings.forceStopAtEndOfCycle = value;
+						this.plugin.saveSettings();
+					}));
+
+
 
 
 		/************** Appearance ************************/
