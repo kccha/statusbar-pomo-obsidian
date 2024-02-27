@@ -1,4 +1,4 @@
-import { App, Modal, Plugin } from 'obsidian';
+import { App, MarkdownRenderer, MarkdownView, Modal, Plugin, TFile } from 'obsidian';
 import { hasUncaughtExceptionCaptureCallback } from 'process';
 import { PomoSettingTab, PomoSettings, DEFAULT_SETTINGS } from './settings';
 import { getDailyNoteFile, Mode, Timer } from './timer';
@@ -6,13 +6,26 @@ import { getDailyNoteFile, Mode, Timer } from './timer';
 class NumberInputModal extends Modal {
 	timer: Timer;
 	hasEntered: boolean = false;
-	constructor(app: App, timer: Timer) {
+	checklistFile: string;
+	constructor(app: App, timer: Timer, checklistFile: string = null) {
 		super(app);
 		this.timer = timer;
+		this.checklistFile = checklistFile;
 	}
 
-	onOpen() {
+	async onOpen() {
 		let { contentEl } = this;
+
+		const file = this.app.vault.getAbstractFileByPath(this.checklistFile)
+		console.log(this.checklistFile);
+		console.log(file);
+		if (file && file instanceof TFile) {
+			const filecontent = await this.app.vault.read(file);
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+			await MarkdownRenderer.renderMarkdown(filecontent, contentEl, this.app.workspace.getActiveFile().path, activeView);
+		}
+
 		contentEl.createEl('h2', { text: 'Set timer length' });
 
 		let input = contentEl.createEl('input');
@@ -102,7 +115,7 @@ export default class PomoTimerPlugin extends Plugin {
 				let leaf = this.app.workspace.activeLeaf;
 				if (leaf) {
 					if (!checking) {
-						new NumberInputModal(this.app, this.timer).open();
+						new NumberInputModal(this.app, this.timer, this.settings.checklistFile).open();
 					}
 					return true;
 				}

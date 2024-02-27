@@ -24,6 +24,7 @@ export interface PomoSettings {
 	fancyStatusBar: boolean;
 	whiteNoise: boolean;
 	forceStopAtEndOfCycle: boolean;
+	checklistFile: string;
 }
 
 export const DEFAULT_SETTINGS: PomoSettings = {
@@ -46,6 +47,7 @@ export const DEFAULT_SETTINGS: PomoSettings = {
 	fancyStatusBar: false,
 	whiteNoise: false,
 	forceStopAtEndOfCycle: true,
+	checklistFile: ""
 }
 
 
@@ -280,7 +282,20 @@ export class PomoSettingTab extends PluginSettingTab {
 						this.plugin.settings.logActiveNote = value;
 						this.plugin.saveSettings();
 					}));
+
 		}
+
+		new Setting(containerEl)
+		    .setName('Checklist file path')
+		    .setDesc('The path of the file to preview in the modal.')
+		    .addText(text => text
+			.setPlaceholder('Enter your file path here')
+			.setValue(this.plugin.settings.checklistFile)
+			.onChange(async (value) => {
+			    this.plugin.settings.checklistFile = value;
+			    await this.plugin.saveSettings();
+			}));
+
 	}
 }
 
