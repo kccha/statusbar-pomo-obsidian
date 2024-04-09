@@ -305,7 +305,7 @@ export class Timer {
 		const logFilePlaceholder = "{{logFile}}";
 		logText = logText + " Duration(" + millisecsToString(this.endTime.clone().diff(this.startTime.clone())) + ")";
 
-		logText = logText + "Goal(" + this.goalText + ") ";
+		logText = logText + " Goal(" + this.goalText + ") ";
 		if (this.settings.logActiveNote === true) {
 			let linkText = this.plugin.app.fileManager.generateMarkdownLink(this.activeNote, '');
 			if (logText.includes(logFilePlaceholder)) {
