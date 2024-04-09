@@ -179,6 +179,7 @@ export class Timer {
 		this.setupTimer(mode);
 		this.paused = false; //do I need this?
 
+		this.activeNotes.clear();
 		if (this.settings.logActiveNote === true) {
 			this.setLogFile()
 		}
