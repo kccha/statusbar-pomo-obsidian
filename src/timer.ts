@@ -30,6 +30,8 @@ export class Timer {
 	autoPaused: boolean;
 	pomosSinceStart: number;
 	cyclesSinceLastAutoStop: number;
+	goalText: string;
+	formattedGoal: string;
 	activeNote: TFile;
 	activeNotes: Set<TFile>;
 	whiteNoisePlayer: WhiteNoise;
@@ -82,7 +84,7 @@ export class Timer {
 				await this.handleTimerEnd();
 			}
 
-			return timer_type_symbol + millisecsToString(this.getCountdown()); //return display value
+			return timer_type_symbol + millisecsToString(this.getCountdown()) + this.formattedGoal; //return display value
 		} else {
 			return ""; //fixes TypeError: failed to execute 'appendChild' on 'Node https://github.com/kzhovn/statusbar-pomo-obsidian/issues/4
 		}
@@ -191,9 +193,11 @@ export class Timer {
 		}
 	}
 
-	startCustomTimer(duration: number): void {
+	startCustomTimer(duration: number, goal: string): void {
 		this.hasCustomDuration = true;
 		this.customDuration = duration;
+		this.goalText = goal;
+		this.formattedGoal = "[ " + goal + " ]";
 		this.startTimer(Mode.Pomo);
 	}
 
@@ -301,6 +305,7 @@ export class Timer {
 		const logFilePlaceholder = "{{logFile}}";
 		logText = logText + " Duration(" + millisecsToString(this.endTime.clone().diff(this.startTime.clone())) + ")";
 
+		logText = logText + "Goal(" + this.goalText + ") ";
 		if (this.settings.logActiveNote === true) {
 			let linkText = this.plugin.app.fileManager.generateMarkdownLink(this.activeNote, '');
 			if (logText.includes(logFilePlaceholder)) {

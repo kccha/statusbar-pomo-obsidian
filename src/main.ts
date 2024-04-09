@@ -26,17 +26,33 @@ class NumberInputModal extends Modal {
 			await MarkdownRenderer.renderMarkdown(filecontent, contentEl, this.app.workspace.getActiveFile().path, activeView);
 		}
 
+		contentEl.createEl('h2', { text: 'Goal' });
+		let inputGoal = contentEl.createEl('input');
+		inputGoal.type = 'text';
+		inputGoal.value = '';
+		inputGoal.select();
+
 		contentEl.createEl('h2', { text: 'Set timer length' });
 
 		let input = contentEl.createEl('input');
 		input.type = 'number';
 		input.value = this.timer.settings.pomo.toString();
-		input.select();
 
 		let button = contentEl.createEl('button', { text: 'Set' });
 		button.onClickEvent(async () => {
-			this.timer.startCustomTimer(parseInt(input.value));
+			this.timer.startCustomTimer(parseInt(input.value), inputGoal.value);
 			this.close();
+		});
+
+		inputGoal.addEventListener('keydown', (event: KeyboardEvent) => {
+			if (event.key === 'Enter') {
+				this.hasEntered = true;
+			}
+		});
+		inputGoal.addEventListener('keyup', (event: KeyboardEvent) => {
+			if (event.key === 'Enter' && this.hasEntered) {
+				button.click();
+			}
 		});
 
 		input.addEventListener('keydown', (event: KeyboardEvent) => {
