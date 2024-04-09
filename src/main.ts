@@ -91,6 +91,14 @@ export default class PomoTimerPlugin extends Plugin {
 		this.registerInterval(window.setInterval(async () =>
 			this.statusBar.setText(await this.timer.setStatusBarText()), 500));
 
+		console.log("Registering events with modify");
+		this.registerEvent(
+			this.app.vault.on('modify', async (file) => {
+				if (file instanceof TFile)
+					this.timer.onFileModify(file);
+				}));
+
+
 		this.addCommand({
 			id: 'start-satusbar-pomo',
 			name: 'Start pomodoro',

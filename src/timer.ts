@@ -31,6 +31,7 @@ export class Timer {
 	pomosSinceStart: number;
 	cyclesSinceLastAutoStop: number;
 	activeNote: TFile;
+	activeNotes: Set<TFile>;
 	whiteNoisePlayer: WhiteNoise;
 
 	constructor(plugin: PomoTimerPlugin) {
@@ -41,9 +42,18 @@ export class Timer {
 		this.pomosSinceStart = 0;
 		this.cyclesSinceLastAutoStop = 0;
 
+		this.activeNotes = new Set<TFile>();
+
 		if (this.settings.whiteNoise === true) {
 			this.whiteNoisePlayer = new WhiteNoise(plugin, whiteNoiseUrl);
 		}
+	}
+
+	onFileModify(file: TFile) {
+		if (this.mode != Mode.Pomo) {
+			return;
+		}
+		this.activeNotes.add(file);
 	}
 
 	onRibbonIconClick() {
@@ -298,6 +308,21 @@ export class Timer {
 				logText = logText + " " + linkText;
 			}
 
+			let dailyNoteFile = null;
+			if (this.settings.logToDaily === true) { 
+				dailyNoteFile = await getDailyNoteFile();
+			}
+
+			for (const file of this.activeNotes) {
+				// Skip the active note since it's already been logged and we want it first
+				if (file == this.activeNote || file == dailyNoteFile) {
+					continue;
+				}
+				let linkText = this.plugin.app.fileManager.generateMarkdownLink(file, '');
+				logText = logText + " " + linkText;
+			}
+			logText
+
 			logText = logText.replace(String.raw`\n`, "\n");
 		}
 
@@ -372,6 +397,7 @@ function showSystemNotification(mode:Mode, useEmoji:boolean): void {
 	}
 	let emoji = useEmoji ? "🍅" : ""
 	let title = `Obsidian Pomodoro ${emoji}`;
+
 
 	// Show system notification
 	const Notification = (electron as any).remote.Notification;
